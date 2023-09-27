@@ -1,91 +1,177 @@
 #-*- coding:utf-8 -*-
+
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from time import sleep
 from openpyxl import Workbook,load_workbook
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+
 
 # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
-driver = webdriver.Chrome(executable_path=r'./chromedriver')
 
-# url에 접근한다.
-driver.get('https://everytime.kr/login')
-# 암묵적으로 웹 자원 로드를 위해 5초까지 기다려 준다.
-driver.implicitly_wait(5)
+chrome_options = webdriver.ChromeOptions()
+# user_data = r"C:\Users\com\AppData\Local\Google\Chrome\User Data"
+# chrome_options.add_argument(f"user-data-dir={user_data}")
 
-# 아이디/비밀번호를 입력해준다.
-driver.find_element_by_name('userid').send_keys('*****')
-driver.find_element_by_name('password').send_keys('*****')
+# chrome_options.add_experimental_option("detach", True)  # 화면이 꺼지지 않고 유지
 
-# 로그인 버튼을 눌러주자.
-driver.find_element_by_xpath('//*[@id="container"]/form/p[3]/input').click()
+# chrome_options.add_argument("--start-maximized")  # 최대 크기로 시작
 
+# chrome_options.add_argument('--headless')
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument('--disable-notifications')
+chrome_options.add_argument('user-agent=Mozilla/5.0 (Windo9ws NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36')
+chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+service = Service("C:\\Users\com\\everytime-timetable-crawling\\chromedriver.exe")
+
+
+
+
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# driver.get('https://everytime.kr/login')
+# # 암묵적으로 웹 자원 로드를 위해 5초까지 기다려 준다.
+# driver.implicitly_wait(5)
+
+# id = 'tlarlguswh'
+# pasword = "shim315709!"
+# # 아이디/비밀번호를 입력해준다.
+# driver.execute_script("document.getElementsByName('userid')[0].value=\'" + id + "\'")
+# driver.execute_script("document.getElementsByName('password')[0].value=\'" + pasword + "\'")
+# # driver.find_element(By.NAME, 'userid').send_keys('tlarlguswh')
+# # driver.find_element(By.NAME, 'password').send_keys('shim315709!')
+
+# # # 로그인 버튼을 눌러주자.
+# # driver.find_element(By.XPATH, '//*[@id="container"]/form/p[3]/input').click()
+ 
 driver.get('https://everytime.kr/timetable')
 
-#수업 목록에서 검색 클릭
-driver.find_element_by_xpath('//*[@id="container"]/ul/li[1]').click()
+# # 클래스가 "cols"인 모든 요소 가져오기
+# cols_elements = driver.find_elements(By.CSS_SELECTOR, '.cols')
 
-#팝업창 닫기
-sleep(2)
-driver.find_element_by_xpath('//*[@id="sheet"]/ul/li[3]/a').click()
+# # 각 "cols" 클래스를 가진 요소에서 데이터 추출
+# for cols_element in cols_elements:
+#     # "subject color" 클래스 이름이 있는 모든 하위 요소 찾기
+#     subject_col_elements = cols_element.find_elements(By.CSS_SELECTOR, '[class*="subject color"]')
+    
+#     # 각 "subject color" 클래스를 가진 하위 요소에서 데이터 추출
+#     for subject_col_element in subject_col_elements:
+#         # "h3" 요소에서 과목명 추출
+#         subject_name = subject_col_element.find_element(By.CSS_SELECTOR, 'h3').text
+        
+#         # "em" 요소에서 교수명 추출
+#         professor_name = subject_col_element.find_element(By.CSS_SELECTOR, 'em').text
+        
+#         # "span" 요소에서 코드 추출
+#         course_code = subject_col_element.find_element(By.CSS_SELECTOR, 'span').text
+        
+#         # 추출한 데이터 출력 또는 다른 용도로 사용
+#         print(f"과목명: {subject_name}")
+#         print(f"교수명: {professor_name}")
+#         print(f"과목 코드: {course_code}")
 
-pre_count = 0
-#스크롤 맨아래로 내리기
-while True:
-    #tr요소 접근
-    element = driver.find_elements_by_css_selector("#subjects > div.list > table > tbody > tr")
+sleep(0.1)
+# td 요소를 모두 가져오기
+td_elements = driver.find_elements(By.XPATH, '//*[@id="container"]/div/div[2]/table/tbody/tr/td[1]')
+print("---------월요일----------")
+# td 요소를 순회하면서 작업 수행
+for td in td_elements:
+    # 원하는 작업을 수행
+    subject_col_elements = td.find_elements(By.CSS_SELECTOR, '[class*="subject color"]')
 
-    # tr 마지막 요소 접근
-    result = element[-1]
-    #마지막요소에 focus주기
-    driver.execute_script('arguments[0].scrollIntoView(true);',result)
-    sleep(2)
+    for subject_col_element in subject_col_elements:
+        # "h3" 요소에서 과목명 추출
+        subject_name = subject_col_element.find_element(By.CSS_SELECTOR, 'h3').text
+        # "em" 요소에서 교수명 추출
+        professor_name = subject_col_element.find_element(By.CSS_SELECTOR, 'em').text
+        # "span" 요소에서 코드 추출
+        course_code = subject_col_element.find_element(By.CSS_SELECTOR, 'span').text
 
-    #현재 접근한 요소의 갯수
-    current_count = len(element)
-    if pre_count == current_count:
-        break
-    #같지않다면
-    pre_count = current_count
+        print(f"과목명: {subject_name}")
+        print(f"교수명: {professor_name}")
+        print(f"과목 코드: {course_code}")
+
+sleep(0.1)
+td_elements = driver.find_elements(By.XPATH, '//*[@id="container"]/div/div[2]/table/tbody/tr/td[2]')
+print("---------화요일----------")
+# td 요소를 순회하면서 작업 수행
+for td in td_elements:
+    # 원하는 작업을 수행
+    subject_col_elements = td.find_elements(By.CSS_SELECTOR, '[class*="subject color"]')
+
+    for subject_col_element in subject_col_elements:
+        # "h3" 요소에서 과목명 추출
+        subject_name = subject_col_element.find_element(By.CSS_SELECTOR, 'h3').text
+        # "em" 요소에서 교수명 추출
+        professor_name = subject_col_element.find_element(By.CSS_SELECTOR, 'em').text
+        # "span" 요소에서 코드 추출
+        course_code = subject_col_element.find_element(By.CSS_SELECTOR, 'span').text
+
+        print(f"과목명: {subject_name}")
+        print(f"교수명: {professor_name}")
+        print(f"과목 코드: {course_code}")
+
+sleep(0.1)
+td_elements = driver.find_elements(By.XPATH, '//*[@id="container"]/div/div[2]/table/tbody/tr/td[3]')
+print("---------수요일----------")
+# td 요소를 순회하면서 작업 수행
+for td in td_elements:
+    # 원하는 작업을 수행
+    subject_col_elements = td.find_elements(By.CSS_SELECTOR, '[class*="subject color"]')
+
+    for subject_col_element in subject_col_elements:
+        # "h3" 요소에서 과목명 추출
+        subject_name = subject_col_element.find_element(By.CSS_SELECTOR, 'h3').text
+        # "em" 요소에서 교수명 추출
+        professor_name = subject_col_element.find_element(By.CSS_SELECTOR, 'em').text
+        # "span" 요소에서 코드 추출
+        course_code = subject_col_element.find_element(By.CSS_SELECTOR, 'span').text
+
+        print(f"과목명: {subject_name}")
+        print(f"교수명: {professor_name}")
+        print(f"과목 코드: {course_code}")
 
 
-html = driver.page_source
-soup = BeautifulSoup(html, 'html.parser')
+sleep(0.1)
+td_elements = driver.find_elements(By.XPATH, '//*[@id="container"]/div/div[2]/table/tbody/tr/td[4]')
+print("---------목요일----------")
+# td 요소를 순회하면서 작업 수행
+for td in td_elements:
+    # 원하는 작업을 수행
+    subject_col_elements = td.find_elements(By.CSS_SELECTOR, '[class*="subject color"]')
 
-trs = soup.select('#subjects > div.list > table > tbody > tr')
+    for subject_col_element in subject_col_elements:
+        # "h3" 요소에서 과목명 추출
+        subject_name = subject_col_element.find_element(By.CSS_SELECTOR, 'h3').text
+        # "em" 요소에서 교수명 추출
+        professor_name = subject_col_element.find_element(By.CSS_SELECTOR, 'em').text
+        # "span" 요소에서 코드 추출
+        course_code = subject_col_element.find_element(By.CSS_SELECTOR, 'span').text
 
-results = []
-
-for tr in trs:
-    result=[]
-    tds = tr.select('#subjects > div.list > table > tbody > tr > td')
-    result.append(tds[0].text) #과목코드
-    result.append(tds[1].text) #과목명
-    result.append(tds[2].text) #교수
-    result.append(tds[3].text) #강의시간
-    result.append(tds[4].text) #강의실
-    result.append(tds[5].text) #구분
-    # result.append(tds[6].text) #학년
-    result.append(tds[7].text) #학점
-    result.append(tds[11].text) #수강대상
-    results.append(result)
-#값이 들어있다면!
-if results:
-    print("성공!!")
-excel_column = 9
-write_wb = Workbook()
-write_ws = write_wb.create_sheet('result.xls')
-for data in results:
-    write_ws = write_wb.active
-    write_ws.append(data)
-write_wb.save('C:/Users/wwlee/Desktop/selenium/result.csv')
+        print(f"과목명: {subject_name}")
+        print(f"교수명: {professor_name}")
+        print(f"과목 코드: {course_code}")
 
 
+sleep(0.1)
+td_elements = driver.find_elements(By.XPATH, '//*[@id="container"]/div/div[2]/table/tbody/tr/td[5]')
+print("---------금요일----------")
+# td 요소를 순회하면서 작업 수행
+for td in td_elements:
+    # 원하는 작업을 수행
+    subject_col_elements = td.find_elements(By.CSS_SELECTOR, '[class*="subject color"]')
 
-# Naver 페이 들어가기
-# driver.get('https://order.pay.naver.com/home')
-# html = driver.page_source
-# soup = BeautifulSoup(html, 'html.parser')
-# notices = soup.select('div.goods_item > div > a > p')
-#
-# for n in notices:
-#     print(n.text.strip())
+    for subject_col_element in subject_col_elements:
+        # "h3" 요소에서 과목명 추출
+        subject_name = subject_col_element.find_element(By.CSS_SELECTOR, 'h3').text
+        # "em" 요소에서 교수명 추출
+        professor_name = subject_col_element.find_element(By.CSS_SELECTOR, 'em').text
+        # "span" 요소에서 코드 추출
+        course_code = subject_col_element.find_element(By.CSS_SELECTOR, 'span').text
+
+        print(f"과목명: {subject_name}")
+        print(f"교수명: {professor_name}")
+        print(f"과목 코드: {course_code}")
